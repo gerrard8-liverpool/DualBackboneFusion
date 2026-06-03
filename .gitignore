@@ -1,0 +1,44 @@
+﻿# datasets and raw data
+datasets/
+data/
+third_party/CoOp_clean/data/
+third_party/CoOp_clean/datasets/
+
+# raw experiment outputs
+third_party/CoOp_clean/output/
+third_party/CoOp_clean/output_*/
+third_party/CoOp_clean/output_dualenc_feature/
+third_party/CoOp_clean/output_cocoop_priorres/
+outputs/*/raw/
+logs/
+tensorboard/
+wandb/
+
+# checkpoints and large binary files
+*.pth
+*.pth.tar
+*.pt
+*.ckpt
+*.pkl
+*.pickle
+*.npy
+*.npz
+
+# archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# system/cache
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# temporary folders
+_transfer/
+tmp/
