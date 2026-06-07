@@ -8,9 +8,7 @@
 
 ## 1. 项目定位
 
-本仓库研究 **CLIP prompt learning 中的视觉主干互补性**。
-
-核心观察是：虽然 **RN101** 作为单模型通常弱于 **ViT-B/16**，但它的预测分布可能包含 ViT-B/16 没有利用到的互补信息。因此，本项目首先不直接混合 image embedding，而是在 prediction / logit 层进行 dual-backbone late fusion：
+本仓库研究 **CLIP prompt learning 中的视觉主干互补性**。核心观察是：虽然 **RN101** 作为单模型通常弱于 **ViT-B/16**，但它的预测分布可能包含 ViT-B/16 没有利用到的互补信息。因此，本项目首先不直接混合 image embedding，而是在 prediction / logit 层进行 dual-backbone late fusion：
 
 ```text
 fused_logits = w * logits_vit + (1 - w) * logits_rn
@@ -29,10 +27,11 @@ w = 0.0  -> RN101 only
 Prediction-Level Dual-Backbone Fusion for Robust CLIP Prompt Transfer
 ```
 
-当前仓库包含两条主要实验线：
+当前仓库包含三条主要实验线：
 
 1. **Fixed Late Fusion**：验证 RN101 与 ViT-B/16 是否存在稳定的 prediction-level complementarity。
-2. **Reliability Prior Cache**：在已有 logits 基础上构建 backbone reliability prior，尝试自动替代固定融合权重。
+2. **Feature-level Fusion Baseline**：验证直接融合 embedding 是否会破坏 CLIP image-text alignment。
+3. **Reliability Prior Cache**：在已有 logits 基础上构建 backbone reliability prior，尝试自动替代固定融合权重。
 
 ---
 
@@ -83,32 +82,46 @@ Fixed late fusion 不是最终目标，而是第一阶段用来验证 RN101 与 
 
 ---
 
-## 4. Reliability Prior Cache 阶段
+## 4. Reliability Prior Cache：两条新路线
 
-在 fixed fusion 证明双主干存在互补性之后，本仓库进一步加入 **Reliability Prior Cache** 阶段。
+在 fixed late fusion 证明双主干存在互补性之后，本仓库进一步加入 **Reliability Prior Cache** 阶段。目标是：在不重新训练 CLIP、CoOp 或 visual backbone 的情况下，利用已经缓存的 RN101 / ViT-B/16 logits 构建 backbone reliability prior，并评估它是否能优于固定 late fusion。
 
-目标是：在不重新训练 CLIP、CoOp 或 visual backbone 的情况下，利用已经缓存的 RN101 / ViT-B/16 logits 构建 backbone reliability prior，并评估它是否能优于固定 late fusion。
+### 4.1 ImageNet Cache route
 
-### 4.1 比较方法
+ImageNet Cache 是一条 **wide-source prior** 路线。它使用 ImageNet 作为宽域 source cache，估计 RN101 与 ViT-B/16 在不同粒度上的可靠性，并迁移到 B2N target。
 
-| Method | 含义 |
-|---|---|
-| `rn_only` | 只用 RN101 |
-| `vit_only` | 只用 ViT-B/16 |
-| `fixed` | 固定权重 late fusion，默认 `w=0.75` |
-| `dataset_cache` | 使用 source cache 得到 dataset-level reliability weight |
-| `class_cache` | 使用 class semantic retrieval 得到 class-level reliability weight |
-| `oracle_dataset` | 在 target label 上搜索最优 dataset-level weight，只作 diagnostic upper bound，不是公平方法 |
+Clean B2N 设置：
 
-### 4.2 Clean protocols
+```text
+source = b2n / imagenet / split_all / seed1-3
+target = 10 non-ImageNet B2N datasets
+metric = HM(base,new)
+```
 
-| Task | Source cache | Target | Metric |
-|---|---|---|---|
-| B2N ImageNet Cache | `b2n / imagenet / split_all / seed1-3` | 10 non-ImageNet B2N datasets | HM(base,new) |
-| B2N Meta LODO Cache | all B2N datasets except target | 10 non-ImageNet B2N datasets | HM(base,new) |
-| strict DG ImageNet Cache | `strict_dg / imagenet / unknown / seed1-3` | ImageNetV2, ImageNet-Sketch, ImageNet-A, ImageNet-R | Accuracy |
+Clean strict DG 设置：
 
-### 4.3 Main clean results
+```text
+source = strict_dg / imagenet / unknown / seed1-3
+target = ImageNetV2 / ImageNet-Sketch / ImageNet-A / ImageNet-R
+metric = accuracy
+```
+
+### 4.2 Meta LODO Cache route
+
+Meta LODO Cache 是一条 **multi-source meta-prior** 路线。它不依赖单一 ImageNet source，而是从多个 B2N 数据集构建 leave-one-dataset-out 的 reliability prior。对每个 target dataset，使用其它 B2N 数据集作为 source cache。
+
+Clean B2N 设置：
+
+```text
+for each target:
+    source = other B2N datasets
+    source splits = all / base / new
+    source seeds = 1 / 2 / 3
+target = current B2N dataset
+metric = HM(base,new)
+```
+
+### 4.3 Reliability Prior Cache 主结果
 
 | Task | Line | Fusion | Fixed | Dataset Cache | Class Cache | Oracle |
 |---|---|---|---:|---:|---:|---:|
@@ -116,17 +129,17 @@ Fixed late fusion 不是最终目标，而是第一阶段用来验证 RN101 与 
 | B2N | Meta LODO Cache | prob_avg | 75.99 | 76.87 | 76.66 | 77.41 |
 | strict DG | ImageNet Cache | prob_avg | 59.29 | 59.18 | 59.06 | 59.61 |
 
-### 4.4 当前阶段结论
+当前结论：
 
-Reliability Prior Cache 在 B2N 上有稳定正信号：
-
+- Reliability Prior Cache 在 B2N 上有稳定正信号。
 - `dataset_cache` 在 ImageNet Cache 和 Meta LODO Cache 两条线上均稳定为正。
 - `prob_avg` 是当前最强、最安全的 fusion interface。
 - ImageNet Cache 的 `class_cache` 在 `prob_avg` 下达到最佳 B2N 结果。
 - Meta LODO Cache 的 `dataset_cache` 在 `prob_avg` 下最稳。
 - `raw_logits + class_cache` 明显不稳定，说明 class-wise reliability transfer 对 calibration 非常敏感。
+- strict ImageNet-derived DG 当前没有被 ImageNet Cache 改进。
 
-strict ImageNet-derived DG 当前没有被 ImageNet Cache 改进。因此当前结论应表述为：
+因此当前结论应表述为：
 
 ```text
 Reliability Prior Cache is effective for B2N, but does not yet provide robust improvement on strict ImageNet-derived DG targets.
@@ -162,7 +175,7 @@ DualBackboneFusion/
 
 ## 6. 当前主要结果
 
-### 6.1 CoOp strict domain generalization
+### 6.1 CoOp fixed late fusion：strict domain generalization
 
 | Setting | Accuracy |
 |---|---:|
@@ -172,7 +185,9 @@ DualBackboneFusion/
 | Std logits w=0.75 | 59.45 |
 | Prob avg w=0.75 | 59.30 |
 
-### 6.2 CoOp ImageNet-source cross-dataset transfer
+观察：RN101 单模型明显弱于 ViT-B/16，但作为 25% 辅助分支可以提升 ViT-B/16。strict DG 中最优固定权重更偏 ViT-dominant。
+
+### 6.2 CoOp fixed late fusion：ImageNet-source cross-dataset transfer
 
 | Setting | Accuracy |
 |---|---:|
@@ -183,7 +198,9 @@ DualBackboneFusion/
 | Std logits w=0.75 | 63.25 |
 | Prob avg w=0.50 | 63.63 |
 
-### 6.3 CoOp base-to-novel full evaluation
+观察：prediction-level fusion 在 cross-dataset transfer 中提升更明显，`prob_avg w=0.50` 比 ViT-B/16 提升约 +1.81。
+
+### 6.3 CoOp fixed late fusion：base-to-novel full evaluation
 
 | Setting | Base | New | HM | All |
 |---|---:|---:|---:|---:|
@@ -193,7 +210,21 @@ DualBackboneFusion/
 | Std logits w=0.50 | 84.38 | 70.62 | 76.41 | 70.05 |
 | Prob avg w=0.50 | 84.23 | 70.59 | 76.33 | 69.94 |
 
-### 6.4 CoCoOp base-to-novel sanity evaluation
+观察：Base 与 New class 均提升，HM 从 74.20 提升到 76.67，说明提升不只是 base fitting，而是也有利于 unseen-class generalization。
+
+### 6.4 CoCoOp fixed late fusion：strict domain generalization
+
+| Setting | Accuracy |
+|---|---:|
+| RN101 only | 47.98 |
+| ViT-B/16 only | 58.86 |
+| Raw logits w=0.75 | 59.81 |
+| Std logits w=0.75 | 59.73 |
+| Prob avg w=0.75 | 59.65 |
+
+观察：CoCoOp strict DG 中也存在双主干互补性。最强固定结果是 `raw_logits w=0.75`，比 ViT-B/16 高约 +0.95。
+
+### 6.5 CoCoOp fixed late fusion：base-to-novel full evaluation
 
 | Setting | Base | New | HM | All |
 |---|---:|---:|---:|---:|
@@ -201,15 +232,28 @@ DualBackboneFusion/
 | ViT-B/16 only | 83.14 | 72.61 | 77.08 | 66.34 |
 | Raw logits w=0.50 | 87.05 | 73.24 | 78.70 | 69.18 |
 | Raw logits w=0.75 | 86.54 | 74.59 | 79.59 | 69.49 |
+| Std logits w=0.50 | 86.67 | 72.41 | 78.03 | 69.05 |
 | Std logits w=0.75 | 86.16 | 74.56 | 79.42 | 69.43 |
+| Prob avg w=0.50 | 86.93 | 73.22 | 78.71 | 68.73 |
+| Prob avg w=0.75 | 85.88 | 74.02 | 78.94 | 68.94 |
 
-### 6.5 Feature-level MLP fusion sanity
+观察：CoCoOp B2N full 结果进一步说明，RN101 与 ViT-B/16 的互补性不局限于 CoOp。最强 HM 是 `raw_logits w=0.75`，从 ViT-B/16 的 77.08 提升到 79.59，约 +2.51 HM。
+
+### 6.6 Feature-level MLP fusion sanity
+
+第一版 feature-level fusion 使用：
+
+```text
+v_fused = normalize(v_vit + alpha * MLP([v_vit, v_rn]))
+```
 
 | Dataset | Feature MLP HM | ViT-B/16 HM | Late Fusion HM |
 |---|---:|---:|---:|
 | DTD | 56.34 | 61.27 | 64.59 |
 | EuroSAT | 73.67 | 77.47 | 78.34 |
 | OxfordPets | 93.44 | 94.01 | 95.06 |
+
+观察：naive feature-level MLP fusion 不如 ViT-B/16，更不如 late fusion。这支持当前解释：RN101 与 ViT-B/16 的互补性主要体现在 prediction distribution，而直接混合 embedding 可能破坏 CLIP image-text alignment。
 
 ---
 
@@ -256,7 +300,7 @@ CoOp_clean
 
 不同服务器上需要根据实际路径修改脚本中的 `PROJECT_ROOT`、`DATASET_ROOT` 等变量。
 
-### 7.2 Fixed late fusion
+### 7.2 CoOp fixed late fusion
 
 ```bash
 bash scripts/dualenc/01_prepare_late_fusion_strict_dg.sh
@@ -393,20 +437,30 @@ third_party/CoOp_clean/output_*/
 
 1. RN101 作为单模型弱于 ViT-B/16。
 2. RN101 的 prediction distribution 仍然可以为 ViT-B/16 提供互补信息。
-3. Prediction-level late fusion 在 CoOp B2N、strict DG、ImageNet-source cross-dataset transfer 中均有正收益。
-4. CoCoOp B2N sanity 结果说明该互补性不局限于 CoOp 静态 prompt。
-5. Feature-level MLP fusion 的失败说明保留各 backbone 自身 CLIP alignment space 很重要。
-6. Reliability Prior Cache 在 B2N 上有效，但当前 strict DG 仍需更强的 domain-aware / shift-aware routing。
+3. Prediction-level late fusion 在 CoOp 和 CoCoOp 的 B2N、strict DG、ImageNet-source transfer 等设置中均有正收益。
+4. Feature-level MLP fusion 的失败说明保留各 backbone 自身 CLIP alignment space 很重要。
+5. ImageNet Cache 和 Meta LODO Cache 两条路线都在 B2N 上获得正信号，说明 reliability prior 不是单一设置的偶然现象。
+6. 当前 strict DG 上的 ImageNet Cache 尚未超过 fixed fusion，因此 DG 需要更强的 domain-aware / shift-aware routing。
 
 当前方法不应被过度表述为 MaPLe、PromptSRC、DPC 或 Promise 等强 prompt-learning 方法的替代品。更合适的定位是：dual-backbone prediction fusion 是一个可以附加到不同 prompt learner 上的正交模块。
 
 后续计划：
 
 1. 扩展到更强 prompt learner，例如 MaPLe、PromptSRC 或其他 robust prompt learning 方法。
-2. 完成 CoCoOp strict DG 与 ImageNet-source cross-dataset transfer。
-3. 补充 control experiments：RN logits image-shuffle、RN logits class-shuffle、matched Gaussian logits noise、temperature / calibration controls。
-4. 补充机制分析：disagreement rescue analysis、confidence / entropy bin analysis、optimal fusion weight heatmap、source / task-dependent fusion ratio analysis。
-5. 重新设计 DG routing：domain-aware source selection、shift-aware reliability prior、ImageNet-A negative transfer analysis。
+2. 补充 control experiments：
+   - RN logits image-shuffle
+   - RN logits class-shuffle
+   - matched Gaussian logits noise
+   - temperature / calibration controls
+3. 补充机制分析：
+   - disagreement rescue analysis
+   - confidence / entropy bin analysis
+   - optimal fusion weight heatmap
+   - source / task-dependent fusion ratio analysis
+4. 重新设计 DG routing：
+   - domain-aware source selection
+   - shift-aware reliability prior
+   - ImageNet-A negative transfer analysis
 
 ---
 
@@ -447,10 +501,11 @@ The project is currently positioned as:
 Prediction-Level Dual-Backbone Fusion for Robust CLIP Prompt Transfer
 ```
 
-This repository currently contains two main experimental lines:
+This repository currently contains three main experimental lines:
 
 1. **Fixed Late Fusion**: verifying whether RN101 and ViT-B/16 exhibit stable prediction-level complementarity.
-2. **Reliability Prior Cache**: building backbone reliability priors from cached logits to improve over fixed late fusion.
+2. **Feature-level Fusion Baseline**: testing whether direct embedding fusion damages CLIP image-text alignment.
+3. **Reliability Prior Cache**: building backbone reliability priors from cached logits to improve over fixed late fusion.
 
 ---
 
@@ -484,25 +539,56 @@ std_logits   : per-sample standardized-logit fusion
 prob_avg     : probability-level averaging
 ```
 
+Common fixed weights are:
+
+```text
+w = 0.00, 0.25, 0.50, 0.75, 1.00
+```
+
 Fixed late fusion is not the final goal. It is used as a first-stage diagnostic tool to verify whether RN101 and ViT-B/16 have meaningful prediction-level complementarity.
 
 ---
 
-## 4. Reliability Prior Cache Stage
+## 4. Reliability Prior Cache: Two New Routes
 
-After fixed fusion confirms dual-backbone complementarity, this repository further introduces a **Reliability Prior Cache** stage.
+After fixed fusion confirms dual-backbone complementarity, this repository further introduces a **Reliability Prior Cache** stage. The goal is to build backbone reliability priors from cached RN101 / ViT-B/16 logits and evaluate whether they can improve over fixed late fusion without retraining CLIP, CoOp, or the visual backbones.
 
-The goal is to build backbone reliability priors from cached RN101 / ViT-B/16 logits and evaluate whether they can improve over fixed late fusion without retraining CLIP, CoOp, or the visual backbones.
+### 4.1 ImageNet Cache route
 
-### 4.1 Clean protocols
+ImageNet Cache is a **wide-source prior** route. It uses ImageNet as a broad source cache to estimate RN101 / ViT-B/16 reliability and transfer it to B2N targets.
 
-| Task | Source cache | Target | Metric |
-|---|---|---|---|
-| B2N ImageNet Cache | `b2n / imagenet / split_all / seed1-3` | 10 non-ImageNet B2N datasets | HM(base,new) |
-| B2N Meta LODO Cache | all B2N datasets except target | 10 non-ImageNet B2N datasets | HM(base,new) |
-| strict DG ImageNet Cache | `strict_dg / imagenet / unknown / seed1-3` | ImageNetV2, ImageNet-Sketch, ImageNet-A, ImageNet-R | Accuracy |
+Clean B2N setting:
 
-### 4.2 Main clean results
+```text
+source = b2n / imagenet / split_all / seed1-3
+target = 10 non-ImageNet B2N datasets
+metric = HM(base,new)
+```
+
+Clean strict DG setting:
+
+```text
+source = strict_dg / imagenet / unknown / seed1-3
+target = ImageNetV2 / ImageNet-Sketch / ImageNet-A / ImageNet-R
+metric = accuracy
+```
+
+### 4.2 Meta LODO Cache route
+
+Meta LODO Cache is a **multi-source meta-prior** route. It does not rely on a single ImageNet source. Instead, it builds a leave-one-dataset-out reliability prior from multiple B2N datasets.
+
+Clean B2N setting:
+
+```text
+for each target:
+    source = other B2N datasets
+    source splits = all / base / new
+    source seeds = 1 / 2 / 3
+target = current B2N dataset
+metric = HM(base,new)
+```
+
+### 4.3 Main Reliability Prior Cache results
 
 | Task | Line | Fusion | Fixed | Dataset Cache | Class Cache | Oracle |
 |---|---|---|---:|---:|---:|---:|
@@ -510,9 +596,13 @@ The goal is to build backbone reliability priors from cached RN101 / ViT-B/16 lo
 | B2N | Meta LODO Cache | prob_avg | 75.99 | 76.87 | 76.66 | 77.41 |
 | strict DG | ImageNet Cache | prob_avg | 59.29 | 59.18 | 59.06 | 59.61 |
 
-### 4.3 Stage interpretation
+Stage interpretation:
 
-Reliability Prior Cache provides stable positive signals on B2N, especially under the probability-level interface. However, strict ImageNet-derived DG is not improved by the current ImageNet Cache. Future DG work should focus on domain-aware or shift-aware routing rather than simply scaling the current cache.
+- Reliability Prior Cache is effective on B2N.
+- `dataset_cache` is consistently positive under both ImageNet Cache and Meta LODO Cache.
+- `prob_avg` is currently the strongest and safest fusion interface.
+- `raw_logits + class_cache` is unstable, suggesting that class-wise reliability transfer is highly calibration-sensitive.
+- strict ImageNet-derived DG is not improved by the current ImageNet Cache and requires stronger domain-aware or shift-aware routing.
 
 ---
 
@@ -522,6 +612,7 @@ Reliability Prior Cache provides stable positive signals on B2N, especially unde
 DualBackboneFusion/
 ├── README.md
 ├── docs/
+│   └── README_RPC_STAGE_UPDATE.md
 ├── scripts/
 │   ├── dualenc/
 │   ├── dualenc_cocoop/
@@ -539,7 +630,7 @@ DualBackboneFusion/
 
 ## 6. Main Results
 
-### 6.1 CoOp strict domain generalization
+### 6.1 CoOp fixed late fusion: strict domain generalization
 
 | Setting | Accuracy |
 |---|---:|
@@ -549,7 +640,7 @@ DualBackboneFusion/
 | Std logits w=0.75 | 59.45 |
 | Prob avg w=0.75 | 59.30 |
 
-### 6.2 CoOp ImageNet-source cross-dataset transfer
+### 6.2 CoOp fixed late fusion: ImageNet-source cross-dataset transfer
 
 | Setting | Accuracy |
 |---|---:|
@@ -560,7 +651,7 @@ DualBackboneFusion/
 | Std logits w=0.75 | 63.25 |
 | Prob avg w=0.50 | 63.63 |
 
-### 6.3 CoOp base-to-novel full evaluation
+### 6.3 CoOp fixed late fusion: base-to-novel full evaluation
 
 | Setting | Base | New | HM | All |
 |---|---:|---:|---:|---:|
@@ -570,7 +661,17 @@ DualBackboneFusion/
 | Std logits w=0.50 | 84.38 | 70.62 | 76.41 | 70.05 |
 | Prob avg w=0.50 | 84.23 | 70.59 | 76.33 | 69.94 |
 
-### 6.4 CoCoOp base-to-novel sanity evaluation
+### 6.4 CoCoOp fixed late fusion: strict domain generalization
+
+| Setting | Accuracy |
+|---|---:|
+| RN101 only | 47.98 |
+| ViT-B/16 only | 58.86 |
+| Raw logits w=0.75 | 59.81 |
+| Std logits w=0.75 | 59.73 |
+| Prob avg w=0.75 | 59.65 |
+
+### 6.5 CoCoOp fixed late fusion: base-to-novel full evaluation
 
 | Setting | Base | New | HM | All |
 |---|---:|---:|---:|---:|
@@ -578,9 +679,12 @@ DualBackboneFusion/
 | ViT-B/16 only | 83.14 | 72.61 | 77.08 | 66.34 |
 | Raw logits w=0.50 | 87.05 | 73.24 | 78.70 | 69.18 |
 | Raw logits w=0.75 | 86.54 | 74.59 | 79.59 | 69.49 |
+| Std logits w=0.50 | 86.67 | 72.41 | 78.03 | 69.05 |
 | Std logits w=0.75 | 86.16 | 74.56 | 79.42 | 69.43 |
+| Prob avg w=0.50 | 86.93 | 73.22 | 78.71 | 68.73 |
+| Prob avg w=0.75 | 85.88 | 74.02 | 78.94 | 68.94 |
 
-### 6.5 Feature-level MLP fusion sanity
+### 6.6 Feature-level MLP fusion sanity
 
 | Dataset | Feature MLP HM | ViT-B/16 HM | Late Fusion HM |
 |---|---:|---:|---:|
@@ -602,7 +706,16 @@ bash scripts/dualenc/04_run_late_fusion_b2n_full.sh
 bash scripts/dualenc/05_eval_late_fusion_xd_imagenet_source.sh
 ```
 
-### 7.2 Reliability Prior Cache
+### 7.2 CoCoOp late fusion
+
+```bash
+bash scripts/dualenc_cocoop/00_create_cocoop_dualenc_configs.sh
+bash scripts/dualenc_cocoop/01_run_cocoop_late_fusion_strict_dg.sh
+bash scripts/dualenc_cocoop/02_run_cocoop_late_fusion_xd_imagenet_source.sh
+bash scripts/dualenc_cocoop/03_run_cocoop_late_fusion_b2n.sh
+```
+
+### 7.3 Reliability Prior Cache
 
 ```bash
 PROJECT_ROOT=/workspace/meta_prompt_1 \
@@ -615,7 +728,6 @@ for MODE in std_logits raw_logits prob_avg; do
   PROJECT_ROOT=/workspace/meta_prompt_1 \
   FUSION_MODE=$MODE \
   bash scripts/dualenc_rpc/run_rpc_01_imagenet_cache_clean_b2n.sh
-
 done
 ```
 
@@ -624,7 +736,6 @@ for MODE in std_logits raw_logits prob_avg; do
   PROJECT_ROOT=/workspace/meta_prompt_1 \
   FUSION_MODE=$MODE \
   bash scripts/dualenc_rpc/run_rpc_02_meta_lodo_b2n_clean.sh
-
 done
 ```
 
@@ -633,7 +744,6 @@ for MODE in std_logits raw_logits prob_avg; do
   PROJECT_ROOT=/workspace/meta_prompt_1 \
   FUSION_MODE=$MODE \
   bash scripts/dualenc_rpc/run_rpc_03_imagenet_cache_clean_strict_dg.sh
-
 done
 ```
 
@@ -664,10 +774,10 @@ The current evidence supports the following interpretation:
 
 1. RN101 is weaker than ViT-B/16 as a standalone CLIP prompt learner.
 2. RN101 can still provide complementary prediction information to ViT-B/16.
-3. Prediction-level late fusion improves ViT-B/16 under CoOp B2N, strict DG, and ImageNet-source cross-dataset transfer.
-4. CoCoOp B2N sanity results suggest that this complementarity is not limited to static prompt learning.
-5. Naive feature-level fusion is weaker than prediction-level fusion, suggesting that preserving each backbone's own CLIP alignment space is important.
-6. Reliability Prior Cache is effective on B2N, but strict DG still requires stronger domain-aware or shift-aware routing.
+3. Prediction-level late fusion improves ViT-B/16 under CoOp and CoCoOp B2N / strict DG settings.
+4. Naive feature-level fusion is weaker than prediction-level fusion, suggesting that preserving each backbone's own CLIP alignment space is important.
+5. ImageNet Cache and Meta LODO Cache both provide positive B2N signals, showing that reliability prior is not a single-source artifact.
+6. strict DG still requires stronger domain-aware or shift-aware routing.
 
 The current method should not be overclaimed as a universal replacement for stronger prompt-learning methods such as MaPLe, PromptSRC, DPC, or Promise. A more appropriate claim is that dual-backbone prediction fusion is a potentially orthogonal module that can be attached to different prompt learners.
 
