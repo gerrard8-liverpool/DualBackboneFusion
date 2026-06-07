@@ -42,3 +42,15 @@ Thumbs.db
 # temporary folders
 _transfer/
 tmp/
+
+# Reliability Prior Cache large artifacts
+outputs/dualenc_cache/logits/
+outputs/reliability_prior_cache/paired_logits/
+logs/
+*.npz
+*.pth
+*.pth.tar
+*.pt
+*.ckpt
+*.tar
+*.tar.gz

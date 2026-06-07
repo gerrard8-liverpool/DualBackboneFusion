@@ -1,0 +1,131 @@
+# Reliability Prior Cache: Clean B2N Stage Main Table
+
+Generated at: `2026-06-07 03:55:44`
+
+## Protocol
+
+This report summarizes the current clean B2N stage before adding strict-DG results.
+
+- **ImageNet Cache B2N clean**: source cache uses `b2n / imagenet / split_all / seed1-3`; target evaluation uses the 10 non-ImageNet B2N datasets.
+- **Meta LODO B2N clean**: for each target, source cache uses the other B2N datasets with `all/base/new` splits and seed1-3. For fair comparison with ImageNet Cache, the main average excludes ImageNet target.
+- **Metric**: HM(base,new), averaged over 3 seeds.
+- **Fair methods**: `fixed`, `dataset_cache`, `class_cache`. `oracle_dataset` is diagnostic upper bound only.
+
+## Main Table: Clean B2N, Non-ImageNet 10 Targets
+
+| Line | Fusion | n | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ImageNet Cache | std_logits | 10 | 76.71 | 77.11 | 77.13 | 77.70 | +0.40 | +0.42 | +0.98 |
+| ImageNet Cache | raw_logits | 10 | 76.70 | 77.17 | 71.99 | 77.76 | +0.47 | -4.71 | +1.06 |
+| ImageNet Cache | prob_avg | 10 | 75.99 | 76.86 | 76.92 | 77.41 | +0.87 | +0.93 | +1.42 |
+| Meta LODO Cache | std_logits | 10 | 76.71 | 77.15 | 76.90 | 77.70 | +0.44 | +0.19 | +0.98 |
+| Meta LODO Cache | raw_logits | 10 | 76.70 | 77.21 | 69.91 | 77.76 | +0.51 | -6.79 | +1.06 |
+| Meta LODO Cache | prob_avg | 10 | 75.99 | 76.87 | 76.66 | 77.41 | +0.88 | +0.67 | +1.42 |
+
+## Recommended Stage Interpretation
+
+- `dataset_cache` is consistently positive across both ImageNet Cache and Meta LODO Cache under all three fusion modes.
+- `prob_avg` is currently the strongest and safest fusion interface.
+- ImageNet Cache gives the strongest class-wise result under `prob_avg`; Meta LODO Cache gives a robust dataset-level prior.
+- `raw_logits + class_cache` is consistently unstable and should be treated as negative evidence for uncalibrated class-wise reliability retrieval.
+- Strict-DG results are not included yet and should be appended after the DG run finishes.
+
+## Per-target Detail: ImageNet Cache B2N Clean
+
+### std_logits
+
+| Target | Seeds | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| caltech101 | 3 | 96.12 | 96.18 | 96.15 | 96.66 | +0.06 | +0.03 | +0.54 |
+| dtd | 3 | 63.71 | 64.78 | 64.73 | 65.50 | +1.07 | +1.02 | +1.79 |
+| eurosat | 3 | 79.42 | 79.25 | 79.10 | 80.89 | -0.17 | -0.32 | +1.47 |
+| fgvc_aircraft | 3 | 34.27 | 34.36 | 34.30 | 34.99 | +0.09 | +0.03 | +0.72 |
+| food101 | 3 | 90.90 | 91.08 | 91.03 | 91.17 | +0.18 | +0.13 | +0.27 |
+| oxford_flowers | 3 | 80.53 | 81.14 | 81.28 | 81.54 | +0.61 | +0.75 | +1.01 |
+| oxford_pets | 3 | 94.88 | 95.03 | 95.27 | 95.43 | +0.15 | +0.39 | +0.55 |
+| stanford_cars | 3 | 76.56 | 77.44 | 77.37 | 77.76 | +0.88 | +0.81 | +1.20 |
+| sun397 | 3 | 77.49 | 77.95 | 78.07 | 78.15 | +0.46 | +0.58 | +0.66 |
+| ucf101 | 3 | 73.24 | 73.91 | 73.98 | 74.86 | +0.67 | +0.74 | +1.62 |
+
+### raw_logits
+
+| Target | Seeds | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| caltech101 | 3 | 96.15 | 96.25 | 94.02 | 96.73 | +0.10 | -2.13 | +0.58 |
+| dtd | 3 | 64.15 | 65.06 | 63.00 | 65.65 | +0.91 | -1.15 | +1.50 |
+| eurosat | 3 | 79.10 | 79.10 | 71.56 | 81.20 | +0.00 | -7.54 | +2.10 |
+| fgvc_aircraft | 3 | 34.24 | 34.58 | 32.40 | 35.02 | +0.34 | -1.84 | +0.78 |
+| food101 | 3 | 90.85 | 91.07 | 87.36 | 91.17 | +0.22 | -3.49 | +0.32 |
+| oxford_flowers | 3 | 80.45 | 81.17 | 76.59 | 81.57 | +0.72 | -3.86 | +1.12 |
+| oxford_pets | 3 | 94.90 | 95.02 | 89.23 | 95.48 | +0.12 | -5.67 | +0.58 |
+| stanford_cars | 3 | 76.47 | 77.46 | 67.91 | 77.78 | +0.99 | -8.56 | +1.31 |
+| sun397 | 3 | 77.43 | 78.01 | 70.94 | 78.18 | +0.58 | -6.49 | +0.75 |
+| ucf101 | 3 | 73.26 | 73.95 | 66.93 | 74.78 | +0.69 | -6.33 | +1.52 |
+
+### prob_avg
+
+| Target | Seeds | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| caltech101 | 3 | 96.00 | 96.25 | 96.22 | 96.59 | +0.25 | +0.22 | +0.59 |
+| dtd | 3 | 62.95 | 64.20 | 64.19 | 64.89 | +1.25 | +1.24 | +1.94 |
+| eurosat | 3 | 78.84 | 79.13 | 79.18 | 80.81 | +0.29 | +0.34 | +1.97 |
+| fgvc_aircraft | 3 | 32.94 | 33.52 | 33.54 | 34.07 | +0.58 | +0.60 | +1.13 |
+| food101 | 3 | 90.46 | 91.00 | 90.98 | 91.10 | +0.54 | +0.52 | +0.64 |
+| oxford_flowers | 3 | 79.49 | 80.38 | 80.64 | 80.97 | +0.89 | +1.15 | +1.48 |
+| oxford_pets | 3 | 94.57 | 95.00 | 95.12 | 95.32 | +0.43 | +0.55 | +0.75 |
+| stanford_cars | 3 | 75.38 | 76.88 | 76.99 | 77.37 | +1.50 | +1.61 | +1.99 |
+| sun397 | 3 | 76.47 | 77.75 | 77.95 | 78.15 | +1.28 | +1.48 | +1.68 |
+| ucf101 | 3 | 72.81 | 74.51 | 74.41 | 74.81 | +1.70 | +1.60 | +2.00 |
+
+## Per-target Detail: Meta LODO B2N Clean
+
+### std_logits
+
+| Target | Seeds | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| caltech101 | 3 | 96.12 | 96.20 | 96.19 | 96.66 | +0.08 | +0.07 | +0.54 |
+| dtd | 3 | 63.71 | 64.88 | 64.70 | 65.50 | +1.17 | +0.99 | +1.79 |
+| eurosat | 3 | 79.42 | 78.93 | 77.66 | 80.89 | -0.49 | -1.76 | +1.47 |
+| fgvc_aircraft | 3 | 34.27 | 34.32 | 34.03 | 34.99 | +0.05 | -0.24 | +0.72 |
+| food101 | 3 | 90.90 | 91.07 | 91.00 | 91.17 | +0.17 | +0.10 | +0.27 |
+| oxford_flowers | 3 | 80.53 | 81.28 | 80.97 | 81.54 | +0.75 | +0.44 | +1.01 |
+| oxford_pets | 3 | 94.88 | 95.07 | 95.22 | 95.43 | +0.19 | +0.34 | +0.55 |
+| stanford_cars | 3 | 76.56 | 77.54 | 77.31 | 77.76 | +0.98 | +0.75 | +1.20 |
+| sun397 | 3 | 77.49 | 78.06 | 77.87 | 78.15 | +0.57 | +0.38 | +0.66 |
+| ucf101 | 3 | 73.24 | 74.14 | 74.02 | 74.86 | +0.90 | +0.78 | +1.62 |
+
+### raw_logits
+
+| Target | Seeds | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| caltech101 | 3 | 96.15 | 96.27 | 94.19 | 96.73 | +0.12 | -1.96 | +0.58 |
+| dtd | 3 | 64.15 | 65.10 | 59.69 | 65.65 | +0.95 | -4.46 | +1.50 |
+| eurosat | 3 | 79.10 | 78.90 | 69.59 | 81.20 | -0.20 | -9.51 | +2.10 |
+| fgvc_aircraft | 3 | 34.24 | 34.46 | 23.33 | 35.02 | +0.22 | -10.91 | +0.78 |
+| food101 | 3 | 90.85 | 91.10 | 87.49 | 91.17 | +0.25 | -3.36 | +0.32 |
+| oxford_flowers | 3 | 80.45 | 81.30 | 73.13 | 81.57 | +0.85 | -7.32 | +1.12 |
+| oxford_pets | 3 | 94.90 | 95.11 | 89.91 | 95.48 | +0.21 | -4.99 | +0.58 |
+| stanford_cars | 3 | 76.47 | 77.54 | 64.03 | 77.78 | +1.07 | -12.44 | +1.31 |
+| sun397 | 3 | 77.43 | 78.12 | 69.05 | 78.18 | +0.69 | -8.38 | +0.75 |
+| ucf101 | 3 | 73.26 | 74.24 | 68.67 | 74.78 | +0.98 | -4.59 | +1.52 |
+
+### prob_avg
+
+| Target | Seeds | Fixed | Dataset Cache | Class Cache | Oracle | Dataset-Fixed | Class-Fixed | Oracle-Fixed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| caltech101 | 3 | 96.00 | 96.28 | 96.16 | 96.59 | +0.28 | +0.16 | +0.59 |
+| dtd | 3 | 62.95 | 64.17 | 63.62 | 64.89 | +1.22 | +0.67 | +1.94 |
+| eurosat | 3 | 78.84 | 79.13 | 78.26 | 80.81 | +0.29 | -0.58 | +1.97 |
+| fgvc_aircraft | 3 | 32.94 | 33.42 | 33.25 | 34.07 | +0.48 | +0.31 | +1.13 |
+| food101 | 3 | 90.46 | 91.00 | 90.99 | 91.10 | +0.54 | +0.53 | +0.64 |
+| oxford_flowers | 3 | 79.49 | 80.54 | 80.04 | 80.97 | +1.05 | +0.55 | +1.48 |
+| oxford_pets | 3 | 94.57 | 95.01 | 95.10 | 95.32 | +0.44 | +0.53 | +0.75 |
+| stanford_cars | 3 | 75.38 | 76.91 | 76.94 | 77.37 | +1.53 | +1.56 | +1.99 |
+| sun397 | 3 | 76.47 | 77.80 | 77.82 | 78.15 | +1.33 | +1.35 | +1.68 |
+| ucf101 | 3 | 72.81 | 74.42 | 74.42 | 74.81 | +1.61 | +1.61 | +2.00 |
+
+## Source Files
+
+- ImageNet Cache summaries: `outputs/reliability_prior_cache/imagenet_cache_b2n_clean/*/eval/rpc_eval_summary.md`
+- Meta LODO summaries: `outputs/reliability_prior_cache/meta_lodo_b2n_clean/*/target_*/eval/rpc_eval_summary.md`
+- Compact CSV: `outputs/reliability_prior_cache/reports/b2n_clean_stage_compact_hm.csv`

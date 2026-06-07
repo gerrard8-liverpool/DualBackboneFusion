@@ -1,24 +1,3 @@
-# ImageNet-source strict DG logits extraction
-
-This pack adds two shell scripts:
-
-```text
-scripts/dualenc_cache/05_collect_imagenet_strict_logits.sh
-scripts/dualenc_cache/06_check_imagenet_strict_logits.sh
-```
-
-Default targets:
-
-```text
-imagenet imagenetv2 imagenet_sketch imagenet_a imagenet_r
-```
-
-The script loads RN101 and ViT-B/16 one branch at a time and uses `BATCH_SIZE=4` by default to keep GPU memory low.
-
----
-
-<!-- RPC_STAGE_UPDATE_START -->
-
 ## Reliability Prior Cache Stage
 
 This repository now includes a clean Reliability Prior Cache evaluation stage for RN101 / ViT-B/16 dual-backbone prediction fusion.
@@ -50,5 +29,3 @@ The goal is to test whether cached backbone reliability priors can improve over 
 - strict ImageNet-derived DG is not improved by the current ImageNet Cache, so DG requires a stronger domain-aware or shift-aware routing design.
 
 Detailed handoff notes are available in `docs/NEXT_CHAT_HANDOFF_RPC_20260606.md`.
-
-<!-- RPC_STAGE_UPDATE_END -->
