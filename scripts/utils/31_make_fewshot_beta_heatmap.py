@@ -236,18 +236,20 @@ def make_best_beta_per_dataset_heatmap(best_df):
     vmax = max(0.8, float(np.nanmax(np.abs(mat_delta.values))) * 1.15)
     vmin = -vmax
 
-    fig, ax = plt.subplots(figsize=(9.8, 8.2), dpi=240)
+    fig, ax = plt.subplots(figsize=(10.2, 8.8), dpi=240)
 
     im = ax.imshow(mat_delta.values, aspect="auto", cmap="RdYlGn", vmin=vmin, vmax=vmax)
 
     ax.set_title(
         "Best available EMRC gain per dataset and shot",
-        fontsize=15,
+        fontsize=14,
         fontweight="bold",
-        pad=14,
+        pad=18,
     )
+    pos_counts = {shots: int((mat_delta[shots].values > 0).sum()) for shots in SHOTS}
+
     ax.set_xticks(np.arange(len(SHOTS)))
-    ax.set_xticklabels([f"{s}-shot" for s in SHOTS], fontsize=11)
+    ax.set_xticklabels([f"{s}-shot\n{pos_counts[s]}/10 positive" for s in SHOTS], fontsize=10)
     ax.set_yticks(np.arange(len(DATASET_ORDER)))
     ax.set_yticklabels([PRETTY[d] for d in DATASET_ORDER], fontsize=11)
 
@@ -269,20 +271,6 @@ def make_best_beta_per_dataset_heatmap(best_df):
                 fontsize=8.8,
                 color="black",
             )
-
-    for j, shots in enumerate(SHOTS):
-        vals = mat_delta[shots].values
-        pos = int((vals > 0).sum())
-        ax.text(
-            j,
-            -1.0,
-            f"{pos}/10 +",
-            ha="center",
-            va="center",
-            fontsize=10,
-            fontweight="bold",
-            bbox=dict(facecolor="white", edgecolor="0.8", boxstyle="round,pad=0.25"),
-        )
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.92, pad=0.025)
     cbar.set_label("Best Δ accuracy vs NLC β=0", fontsize=11)
