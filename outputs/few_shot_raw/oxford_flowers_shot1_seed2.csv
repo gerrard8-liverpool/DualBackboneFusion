@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+oxford_flowers,2,1,rn50_only,50.23295283317566
+oxford_flowers,2,1,rn101_only,55.4002583026886
+oxford_flowers,2,1,vit_b32_only,55.484962463378906
+oxford_flowers,2,1,vit_b16_only,64.54892158508301
+oxford_flowers,2,1,log_avg,66.62431359291077
+oxford_flowers,2,1,emrc_raw_logit_route_beta1.00,68.36086511611938
+oxford_flowers,2,1,nlc_original_train_aligned_beta0.00,66.87844395637512
+oxford_flowers,2,1,nlc_emrc_train_aligned_beta0.02,66.37018322944641
+oxford_flowers,2,1,nlc_emrc_train_aligned_beta0.05,66.07369780540466
+oxford_flowers,2,1,nlc_emrc_train_aligned_beta0.10,65.90427756309509
+oxford_flowers,2,1,nlc_emrc_train_aligned_beta0.20,66.07369780540466
+oxford_flowers,2,1,nlc_emrc_train_aligned_beta0.30,65.98898768424988

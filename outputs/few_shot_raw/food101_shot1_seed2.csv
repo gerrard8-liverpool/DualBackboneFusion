@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+food101,2,1,rn50_only,57.75356888771057
+food101,2,1,rn101_only,66.93267822265625
+food101,2,1,vit_b32_only,70.91956734657288
+food101,2,1,vit_b16_only,78.69465947151184
+food101,2,1,log_avg,77.53899097442627
+food101,2,1,emrc_raw_logit_route_beta1.00,79.3304443359375
+food101,2,1,nlc_original_train_aligned_beta0.00,79.95297908782959
+food101,2,1,nlc_emrc_train_aligned_beta0.02,79.9264907836914
+food101,2,1,nlc_emrc_train_aligned_beta0.05,79.99271750450134
+food101,2,1,nlc_emrc_train_aligned_beta0.10,79.9264907836914
+food101,2,1,nlc_emrc_train_aligned_beta0.20,79.79072332382202
+food101,2,1,nlc_emrc_train_aligned_beta0.30,79.70793843269348

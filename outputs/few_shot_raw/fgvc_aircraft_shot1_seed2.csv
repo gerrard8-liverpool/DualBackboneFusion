@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+fgvc_aircraft,2,1,rn50_only,12.836374342441559
+fgvc_aircraft,2,1,rn101_only,14.444787800312042
+fgvc_aircraft,2,1,vit_b32_only,15.712960064411163
+fgvc_aircraft,2,1,vit_b16_only,22.02288955450058
+fgvc_aircraft,2,1,log_avg,21.404269337654114
+fgvc_aircraft,2,1,emrc_raw_logit_route_beta1.00,22.177544236183167
+fgvc_aircraft,2,1,nlc_original_train_aligned_beta0.00,22.82709628343582
+fgvc_aircraft,2,1,nlc_emrc_train_aligned_beta0.02,23.2910618185997
+fgvc_aircraft,2,1,nlc_emrc_train_aligned_beta0.05,23.72409552335739
+fgvc_aircraft,2,1,nlc_emrc_train_aligned_beta0.10,24.064336717128754
+fgvc_aircraft,2,1,nlc_emrc_train_aligned_beta0.20,24.435509741306305
+fgvc_aircraft,2,1,nlc_emrc_train_aligned_beta0.30,24.21899139881134

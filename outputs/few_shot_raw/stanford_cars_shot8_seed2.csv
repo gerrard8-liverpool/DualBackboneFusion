@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+stanford_cars,2,8,rn50_only,46.09918296337128
+stanford_cars,2,8,rn101_only,55.924612283706665
+stanford_cars,2,8,vit_b32_only,53.42190861701965
+stanford_cars,2,8,vit_b16_only,59.52417850494385
+stanford_cars,2,8,log_avg,66.97049140930176
+stanford_cars,2,8,emrc_raw_logit_route_beta1.00,66.22895002365112
+stanford_cars,2,8,nlc_original_train_aligned_beta0.00,67.89742112159729
+stanford_cars,2,8,nlc_emrc_train_aligned_beta0.02,67.85107254981995
+stanford_cars,2,8,nlc_emrc_train_aligned_beta0.05,67.74293184280396
+stanford_cars,2,8,nlc_emrc_train_aligned_beta0.10,67.75838136672974
+stanford_cars,2,8,nlc_emrc_train_aligned_beta0.20,67.82017946243286
+stanford_cars,2,8,nlc_emrc_train_aligned_beta0.30,67.95921921730042

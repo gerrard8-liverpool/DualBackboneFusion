@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+oxford_pets,2,4,rn50_only,79.49446439743042
+oxford_pets,2,4,rn101_only,77.81879901885986
+oxford_pets,2,4,vit_b32_only,83.61260890960693
+oxford_pets,2,4,vit_b16_only,86.02669835090637
+oxford_pets,2,4,log_avg,87.7591609954834
+oxford_pets,2,4,emrc_raw_logit_route_beta1.00,88.15677165985107
+oxford_pets,2,4,nlc_original_train_aligned_beta0.00,88.4691834449768
+oxford_pets,2,4,nlc_emrc_train_aligned_beta0.02,88.55438828468323
+oxford_pets,2,4,nlc_emrc_train_aligned_beta0.05,88.44078183174133
+oxford_pets,2,4,nlc_emrc_train_aligned_beta0.10,88.04317116737366
+oxford_pets,2,4,nlc_emrc_train_aligned_beta0.20,87.84435987472534
+oxford_pets,2,4,nlc_emrc_train_aligned_beta0.30,87.90116310119629

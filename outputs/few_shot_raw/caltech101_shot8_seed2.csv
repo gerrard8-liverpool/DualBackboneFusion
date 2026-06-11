@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+caltech101,2,8,rn50_only,86.3063097000122
+caltech101,2,8,rn101_only,89.849853515625
+caltech101,2,8,vit_b32_only,92.13213324546814
+caltech101,2,8,vit_b16_only,93.75375509262085
+caltech101,2,8,log_avg,94.47447657585144
+caltech101,2,8,emrc_raw_logit_route_beta1.00,94.71471905708313
+caltech101,2,8,nlc_original_train_aligned_beta0.00,95.13514041900635
+caltech101,2,8,nlc_emrc_train_aligned_beta0.02,95.13514041900635
+caltech101,2,8,nlc_emrc_train_aligned_beta0.05,95.07507681846619
+caltech101,2,8,nlc_emrc_train_aligned_beta0.10,95.25525569915771
+caltech101,2,8,nlc_emrc_train_aligned_beta0.20,95.25525569915771
+caltech101,2,8,nlc_emrc_train_aligned_beta0.30,95.19519805908203

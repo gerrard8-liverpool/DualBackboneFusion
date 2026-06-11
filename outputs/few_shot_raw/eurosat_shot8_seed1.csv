@@ -1,0 +1,13 @@
+dataset,seed,shots,method,acc
+eurosat,1,8,rn50_only,18.715709447860718
+eurosat,1,8,rn101_only,24.426433444023132
+eurosat,1,8,vit_b32_only,14.513714611530304
+eurosat,1,8,vit_b16_only,21.122193336486816
+eurosat,1,8,log_avg,20.56109607219696
+eurosat,1,8,emrc_raw_logit_route_beta1.00,21.93266749382019
+eurosat,1,8,nlc_original_train_aligned_beta0.00,22.406482696533203
+eurosat,1,8,nlc_emrc_train_aligned_beta0.02,22.543640434741974
+eurosat,1,8,nlc_emrc_train_aligned_beta0.05,22.942642867565155
+eurosat,1,8,nlc_emrc_train_aligned_beta0.10,23.441395163536072
+eurosat,1,8,nlc_emrc_train_aligned_beta0.20,24.47630763053894
+eurosat,1,8,nlc_emrc_train_aligned_beta0.30,24.72568452358246
