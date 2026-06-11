@@ -1,7 +1,9 @@
-./figures/few_shot_beta_delta_heatmap.png
-./figures/few_shot_beta_delta_heatmap.svg
+./figures/few_shot_best_beta_per_dataset.png
+./figures/few_shot_best_beta_per_dataset.svg
 ./figures/few_shot_beta_sensitivity.png
 ./figures/few_shot_beta_sensitivity.svg
+./figures/few_shot_shot_beta_summary_heatmap.png
+./figures/few_shot_shot_beta_summary_heatmap.svg
 ./figures/zero_shot_delta_radar.png
 ./figures/zero_shot_delta_radar.svg
 ./FILELIST.txt
@@ -147,8 +149,10 @@
 ./scripts/zero_shot_emrc/06_build_imagenet_meta_cache_zeroshot_all.py
 ./scripts/zero_shot_emrc/10_eval_ensemble_conf_meta_cache.py
 ./scripts/zero_shot_emrc/24b_make_paper_ready_clean_no_oracle.py
+./summary_tables/few_shot/few_shot_best_beta_per_dataset.csv
 ./summary_tables/few_shot/few_shot_beta_delta_by_dataset.csv
 ./summary_tables/few_shot/few_shot_beta_delta_by_dataset.md
+./summary_tables/few_shot/few_shot_shot_beta_summary.csv
 ./summary_tables/few_shot/summary_1_2_4_8.csv
 ./summary_tables/few_shot/summary_1_2_4_8.md
 ./summary_tables/zero_shot/table1_delta_summary_prob_emrc_clean_no_oracle.csv

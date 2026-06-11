@@ -37,7 +37,9 @@ EMRC builds an ImageNet-source reliability cache using ImageNet logits, labels, 
 
 The NLC-style controller takes concatenated frozen CLIP image features and predicts per-backbone temperature values. We inject EMRC through a train-aligned routing objective, where `beta=0` is the NLC-equivalent baseline and `beta>0` adds the EMRC class-level routing prior.
 
-![Few-shot EMRC beta-delta heatmap](figures/few_shot_beta_delta_heatmap.png)
+![Few-shot shot-beta summary](figures/few_shot_shot_beta_summary_heatmap.png)
+
+![Few-shot best-beta per-dataset diagnostic](figures/few_shot_best_beta_per_dataset.png)
 
 ---
 
@@ -71,7 +73,7 @@ Protocol: 10 datasets, 3 seeds, 1/2/4/8-shot.
 | 4-shot | 61.4461 | 61.9282 | +0.4822 |
 | 8-shot | 61.5967 | 62.0665 | +0.4698 |
 
-Across all tested beta values, train-aligned EMRC routing improves over the NLC-equivalent baseline on average. The heatmap reports per-dataset gains for each shot and each beta, showing that the improvement is not driven by a single dataset.
+Across all tested beta values, train-aligned EMRC routing improves over the NLC-equivalent baseline on average. The shot-beta summary reports the mean gain and positive-dataset count for each routing strength. The dataset diagnostic further shows that most target datasets have at least one EMRC routing strength that improves NLC.
 
 Few-shot table: `summary_tables/few_shot/summary_1_2_4_8.md`
 
@@ -148,7 +150,9 @@ EMRC 使用 ImageNet logits、labels 和类别文本特征构建 source reliabil
 
 NLC-style controller 输入多个 frozen CLIP backbone 的 image features，输出每个 backbone 的 temperature。我们通过 train-aligned routing objective 注入 EMRC，其中 `beta=0` 等价于 NLC baseline，`beta>0` 表示加入 EMRC 类别级 routing prior。
 
-![Few-shot EMRC beta-delta heatmap](figures/few_shot_beta_delta_heatmap.png)
+![Few-shot shot-beta summary](figures/few_shot_shot_beta_summary_heatmap.png)
+
+![Few-shot best-beta per-dataset diagnostic](figures/few_shot_best_beta_per_dataset.png)
 
 ---
 
